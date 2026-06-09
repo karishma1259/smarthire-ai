@@ -1,7 +1,6 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-import re
+import fitz
 
 app = FastAPI(title="SmartHire AI")
 
@@ -12,23 +11,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class JobDescription(BaseModel):
-    title: str
-    description: str
-    required_skills: list[str]
+def extract_text(content: bytes, filename: str) -> str:
+    if filename.endswith(".pdf"):
+        doc = fitz.open(stream=content, filetype="pdf")
+        text = ""
+        for page in doc:
+            text += page.get_text()
+        return text
+    return content.decode("utf-8", errors="ignore")
 
-def extract_skills(text: str, skills: list[str]):
-    text_lower = text.lower()
+def calculate_score(resume_text: str, required_skills: list):
+    resume_lower = resume_text.lower()
     found = []
-    for skill in skills:
-        if skill.lower() in text_lower:
-            found.append(skill)
-    return found
-
-def calculate_score(resume_text: str, required_skills: list[str]):
-    found_skills = extract_skills(resume_text, required_skills)
-    score = (len(found_skills) / len(required_skills)) * 100
-    return round(score), found_skills
+    missing = []
+    for skill in required_skills:
+        if skill.strip().lower() in resume_lower:
+            found.append(skill.strip())
+        else:
+            missing.append(skill.strip())
+    if len(required_skills) == 0:
+        return 0, [], []
+    score = round((len(found) / len(required_skills)) * 100)
+    return score, found, missing
 
 @app.get("/")
 def home():
@@ -42,17 +46,16 @@ def health():
 async def screen_resume(
     resume: UploadFile = File(...),
     job_title: str = "Software Engineer",
-    required_skills: str = "python,fastapi,react"
+    required_skills: str = "python,fastapi,react,html,css,javascript,java,sql,spring,aws,kubernetes"
 ):
     content = await resume.read()
-    resume_text = content.decode("utf-8", errors="ignore")
+    resume_text = extract_text(content, resume.filename)
     skills_list = [s.strip() for s in required_skills.split(",")]
-    score, found_skills = calculate_score(resume_text, skills_list)
-    missing_skills = [s for s in skills_list if s not in found_skills]
+    score, found, missing = calculate_score(resume_text, skills_list)
     return {
         "filename": resume.filename,
         "score": score,
-        "found_skills": found_skills,
-        "missing_skills": missing_skills,
+        "found_skills": found,
+        "missing_skills": missing,
         "recommendation": "Strong candidate" if score >= 70 else "Needs review" if score >= 40 else "Not recommended"
     }
