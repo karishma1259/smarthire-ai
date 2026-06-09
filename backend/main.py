@@ -1,6 +1,9 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import fitz
+import os
 
 app = FastAPI(title="SmartHire AI")
 
@@ -10,9 +13,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
     allow_credentials=True,
-    expose_headers=["*"],
 )
-
 
 def extract_text(content: bytes, filename: str) -> str:
     if filename.endswith(".pdf"):
@@ -37,10 +38,6 @@ def calculate_score(resume_text: str, required_skills: list):
     score = round((len(found) / len(required_skills)) * 100)
     return score, found, missing
 
-@app.get("/")
-def home():
-    return {"message": "SmartHire AI is running!"}
-
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -49,7 +46,7 @@ def health():
 async def screen_resume(
     resume: UploadFile = File(...),
     job_title: str = "Software Engineer",
-    required_skills: str = "python,fastapi,react,html,css,javascript,java,sql,spring,aws,kubernetes"
+    required_skills: str = "python,fastapi,react,html,css,javascript,java,sql,spring,aws,kubernrtss"
 ):
     content = await resume.read()
     resume_text = extract_text(content, resume.filename)
@@ -62,3 +59,20 @@ async def screen_resume(
         "missing_skills": missing,
         "recommendation": "Strong candidate" if score >= 70 else "Needs review" if score >= 40 else "Not recommended"
     }
+
+# Frontend serve cheyyadam
+build_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "smarthire-frontend", "build")
+if os.path.exists(build_path):
+    app.mount("/static", StaticFiles(directory=os.path.join(build_path, "static")), name="static")
+    
+    @app.get("/")
+    def serve_frontend():
+        return FileResponse(os.path.join(build_path, "index.html"))
+    
+    @app.get("/{path:path}")
+    def serve_pages(path: str):
+        return FileResponse(os.path.join(build_path, "index.html"))
+else:
+    @app.get("/")
+    def home():
+        return {"message": "SmartHire AI is running!"}
