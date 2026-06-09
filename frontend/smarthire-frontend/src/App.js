@@ -3,7 +3,7 @@ import { useState } from "react";
 const API =  "https://smarthire-api-dds2.onrender.com";
 function App() {
   const [file, setFile] = useState(null);
-  const [skills, setSkills] = useState("python,fastapi,react");
+  const [skills, setSkills] = useState("python,fastapi,react,html,css,javascript,java,sql,spring,aws,kubernetes");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
