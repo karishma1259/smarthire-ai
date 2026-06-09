@@ -9,7 +9,10 @@ app.add_middleware(
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_credentials=True,
+    expose_headers=["*"],
 )
+
 
 def extract_text(content: bytes, filename: str) -> str:
     if filename.endswith(".pdf"):
