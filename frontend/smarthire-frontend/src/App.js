@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const API = "http://127.0.0.1:8000";
+const API =  "https://smarthire-api-dds2.onrender.com";
 function App() {
   const [file, setFile] = useState(null);
   const [skills, setSkills] = useState("python,fastapi,react");
