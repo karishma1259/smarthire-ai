@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const API =  "https://smarthire-api-dds2.onrender.com";
+const API = "https://kit-colin-reductions-organisation.trycloudflare.com";
 function App() {
   const [file, setFile] = useState(null);
   const [skills, setSkills] = useState("python,fastapi,react,html,css,javascript,java,sql,spring,aws,kubernetes");
